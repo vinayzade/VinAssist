@@ -1,10 +1,12 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { isDevelopment } from '@/config';
 import {
   ForgotPasswordScreen,
   LoginScreen,
   RegisterScreen,
 } from '@/features/auth';
+import { BackendStatusScreen } from '@/features/devTools';
 import { useTheme } from '@/theme';
 import type { AuthStackParamList } from './navigationTypes';
 
@@ -31,6 +33,13 @@ export function AuthNavigator() {
         component={ForgotPasswordScreen}
         options={{ headerShown: true, title: 'Reset password' }}
       />
+      {isDevelopment ? (
+        <Stack.Screen
+          name="BackendStatus"
+          component={BackendStatusScreen}
+          options={{ headerShown: true, title: 'Backend status' }}
+        />
+      ) : null}
     </Stack.Navigator>
   );
 }

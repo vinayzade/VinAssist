@@ -15,6 +15,14 @@ async def test_health_returns_exact_contract(client: AsyncClient) -> None:
     assert response.json() == {"status": "healthy"}
 
 
+async def test_health_is_also_served_under_the_api_prefix(client: AsyncClient) -> None:
+    """The mobile app calls every endpoint relative to /api/v1."""
+    response = await client.get("/api/v1/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "healthy"}
+
+
 async def test_health_sets_request_and_timing_headers(client: AsyncClient) -> None:
     response = await client.get("/health", headers={"X-Request-ID": "abc-123"})
 

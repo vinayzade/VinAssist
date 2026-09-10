@@ -5,7 +5,9 @@ import {
 } from '@react-navigation/bottom-tabs';
 import type { RouteProp } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { isDevelopment } from '@/config';
 import { AIAssistantScreen } from '@/features/aiAssistant';
+import { BackendStatusScreen } from '@/features/devTools';
 import { DocumentAnalysisScreen } from '@/features/documentAnalysis';
 import { HistoryScreen } from '@/features/history';
 import { HomeScreen } from '@/features/home';
@@ -126,6 +128,13 @@ export function MainNavigator() {
       />
       <Stack.Screen name="Sentiment" component={SentimentScreen} />
       <Stack.Screen name="Voice" component={VoiceScreen} />
+      {isDevelopment ? (
+        <Stack.Screen
+          name="BackendStatus"
+          component={BackendStatusScreen}
+          options={{ title: 'Backend status' }}
+        />
+      ) : null}
     </Stack.Navigator>
   );
 }

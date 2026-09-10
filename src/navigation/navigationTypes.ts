@@ -16,6 +16,8 @@ export type AuthStackParamList = {
   Register: undefined;
   /** `email` pre-fills the form when arriving from the login screen. */
   ForgotPassword: { email?: string } | undefined;
+  /** Development builds only: backend connectivity check. */
+  BackendStatus: undefined;
 };
 
 /** Bottom tabs shown once the user is signed in. */
@@ -42,6 +44,8 @@ export type MainStackParamList = {
   ImageQuality: { imageUri?: string } | undefined;
   Sentiment: undefined;
   Voice: undefined;
+  /** Development builds only: backend connectivity check. */
+  BackendStatus: undefined;
 };
 
 /**
@@ -91,7 +95,7 @@ export type MainTabScreenProps<T extends keyof MainTabParamList> =
 /** Tool flows reachable from Home / Scanner (everything except the tab host and preview). */
 export type MainToolRoute = Exclude<
   keyof MainStackParamList,
-  'Tabs' | 'ImagePreview'
+  'Tabs' | 'ImagePreview' | 'BackendStatus'
 >;
 
 /* ------------------------------------------------------------------------ */

@@ -1,3 +1,4 @@
+/* eslint-env jest */
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest'),
 );
@@ -115,6 +116,7 @@ jest.mock('react-native-vision-camera', () => {
     React.useEffect(() => {
       props.onPreviewStarted?.();
       return () => props.onPreviewStopped?.();
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- mount/unmount only
     }, []);
     return React.createElement(View, {
       testID: 'vision-camera',

@@ -6,6 +6,7 @@ import {
   AppTextInput,
   ScreenContainer,
 } from '@/components';
+import { isDevelopment } from '@/config';
 import type { AuthScreenProps } from '@/navigation/navigationTypes';
 import { createStyles } from '@/theme';
 import { AuthFooterLink, FormBanner, PasswordField } from '../components';
@@ -105,6 +106,18 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
         disabled={isSubmitting}
         onPress={() => navigation.navigate('Register')}
       />
+
+      {isDevelopment ? (
+        <View style={styles.footer}>
+          <AppButton
+            variant="link"
+            size="sm"
+            title="Backend status (dev)"
+            onPress={() => navigation.navigate('BackendStatus')}
+            testID="login-backend-status"
+          />
+        </View>
+      ) : null}
     </ScreenContainer>
   );
 }

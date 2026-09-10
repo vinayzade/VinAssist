@@ -13,3 +13,4 @@ export * from './userApi';
 export * from './documentApi';
 export * from './aiApi';
 export * from './historyApi';
+export * from './healthApi';

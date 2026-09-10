@@ -7,8 +7,11 @@ import {
   AppText,
   ScreenContainer,
 } from '@/components';
+import { useNavigation } from '@react-navigation/native';
+import { isDevelopment } from '@/config';
 import { useAuth } from '@/features/auth';
 import { useSettings, type ThemeMode } from '@/features/settings';
+import type { MainTabScreenProps } from '@/navigation/navigationTypes';
 import { createStyles } from '@/theme';
 
 const THEME_OPTIONS: { label: string; value: ThemeMode }[] = [
@@ -36,6 +39,8 @@ const useStyles = createStyles(t => ({
 
 export function ProfileScreen() {
   const styles = useStyles();
+  const navigation =
+    useNavigation<MainTabScreenProps<'Profile'>['navigation']>();
   const { user, logout } = useAuth();
   const { themeMode, setThemeMode } = useSettings();
   const initial = user?.name?.trim().charAt(0).toUpperCase() || '?';
@@ -79,6 +84,20 @@ export function ProfileScreen() {
             ))}
           </View>
         </View>
+
+        {isDevelopment ? (
+          <View style={styles.section}>
+            <AppText variant="overline" color="textMuted">
+              Developer
+            </AppText>
+            <AppButton
+              title="Backend status"
+              variant="secondary"
+              onPress={() => navigation.navigate('BackendStatus')}
+              testID="profile-backend-status"
+            />
+          </View>
+        ) : null}
 
         <AppButton title="Sign out" variant="danger" onPress={() => logout()} />
       </View>

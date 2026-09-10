@@ -79,6 +79,40 @@ ENVFILE=.env.staging ./gradlew assembleProductionRelease   # bash
 $env:ENVFILE=".env.staging"; .\gradlew assembleProductionRelease  # PowerShell
 ```
 
+### Reaching the FastAPI backend from a device
+
+The backend listens on your machine, but "localhost" inside an emulator or
+phone is the device itself, so `API_BASE_URL` must name the *host*:
+
+| Target                 | `API_BASE_URL`                | Notes                                             |
+| ---------------------- | ----------------------------- | ------------------------------------------------- |
+| Android emulator       | `http://10.0.2.2:8000`        | Built-in alias for the host. Default in `.env.development`. |
+| iOS simulator          | `http://localhost:8000`       | Shares the host network stack.                    |
+| Physical phone (USB)   | `http://localhost:8000` + `adb reverse tcp:8000 tcp:8000` | Tunnels the phone's port 8000 to the host. Re-run after reconnecting. |
+| Physical phone (Wi-Fi) | `http://<LAN IP>:8000`        | Same network; allow port 8000 through Windows Firewall. |
+
+Start the backend bound to every interface so the phone can reach it:
+
+```sh
+cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+For a physical phone, write the override into a gitignored file and build
+with it (values are compiled in, so a rebuild is required after changing it):
+
+```sh
+# .env.local  (gitignored)
+APP_ENV=development
+API_BASE_URL=http://192.168.0.106:8000
+
+ENVFILE=.env.local npx react-native run-android          # bash
+$env:ENVFILE=".env.local"; npx react-native run-android  # PowerShell
+```
+
+In development builds the **Backend status** screen (link at the bottom of
+the login screen, or Profile > Developer) shows which URL the build is using
+and whether `GET /api/v1/health` answers.
+
 ### How selection works
 
 - **Android**: `android/app/build.gradle` maps each product flavor to a file
