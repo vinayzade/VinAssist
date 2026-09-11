@@ -188,3 +188,19 @@ jest.mock('@react-native-documents/picker', () => {
     }),
   };
 });
+
+// @react-native-clipboard/clipboard: in-memory clipboard.
+jest.mock('@react-native-clipboard/clipboard', () => {
+  const state = { value: '' };
+  return {
+    __esModule: true,
+    __mock: state,
+    default: {
+      setString: jest.fn(text => {
+        state.value = text;
+      }),
+      getString: jest.fn(async () => state.value),
+      hasString: jest.fn(async () => state.value.length > 0),
+    },
+  };
+});

@@ -14,3 +14,5 @@ export * from './documentApi';
 export * from './aiApi';
 export * from './historyApi';
 export * from './healthApi';
+export * from './ocrApi';
+export * from './imageQualityApi';

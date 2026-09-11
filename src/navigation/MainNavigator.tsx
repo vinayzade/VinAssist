@@ -8,12 +8,18 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { isDevelopment } from '@/config';
 import { AIAssistantScreen } from '@/features/aiAssistant';
 import { BackendStatusScreen } from '@/features/devTools';
-import { DocumentAnalysisScreen } from '@/features/documentAnalysis';
+import {
+  DocumentAnalysisScreen,
+  DocumentChatScreen,
+} from '@/features/documentAnalysis';
 import { HistoryScreen } from '@/features/history';
 import { HomeScreen } from '@/features/home';
 import { ImageAnalysisScreen } from '@/features/imageAnalysis';
-import { ImageQualityScreen } from '@/features/imageQuality';
-import { OcrScreen } from '@/features/ocr';
+import {
+  ImageQualityResultScreen,
+  ImageQualityScreen,
+} from '@/features/imageQuality';
+import { OcrResultScreen, OcrScreen } from '@/features/ocr';
 import { ProfileScreen } from '@/features/profile';
 import { CameraScreen, ImagePreviewScreen } from '@/features/scanner';
 import { SentimentScreen } from '@/features/sentiment';
@@ -110,11 +116,25 @@ export function MainNavigator() {
           orientation: 'portrait',
         }}
       />
-      <Stack.Screen name="OCR" component={OcrScreen} />
+      <Stack.Screen
+        name="OCR"
+        component={OcrScreen}
+        options={{ title: 'Smart OCR' }}
+      />
+      <Stack.Screen
+        name="OCRResult"
+        component={OcrResultScreen}
+        options={{ title: 'Extracted text' }}
+      />
       <Stack.Screen
         name="DocumentAnalysis"
         component={DocumentAnalysisScreen}
         options={{ title: 'Document Analysis' }}
+      />
+      <Stack.Screen
+        name="DocumentChat"
+        component={DocumentChatScreen}
+        options={{ title: 'Document chat' }}
       />
       <Stack.Screen
         name="ImageAnalysis"
@@ -125,6 +145,11 @@ export function MainNavigator() {
         name="ImageQuality"
         component={ImageQualityScreen}
         options={{ title: 'Image Quality' }}
+      />
+      <Stack.Screen
+        name="ImageQualityResult"
+        component={ImageQualityResultScreen}
+        options={{ title: 'Quality report' }}
       />
       <Stack.Screen name="Sentiment" component={SentimentScreen} />
       <Stack.Screen name="Voice" component={VoiceScreen} />

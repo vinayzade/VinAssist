@@ -180,6 +180,13 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // On-device OCR (Google ML Kit Text Recognition v2). Models are bundled
+    // in the APK so recognition works offline. Each script adds ~4 MB.
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.mlkit:text-recognition-devanagari:16.0.1")
+    // On-device face detection for the Image Quality module (bundled model).
+    implementation("com.google.mlkit:face-detection:16.1.7")
 }
 
 /**

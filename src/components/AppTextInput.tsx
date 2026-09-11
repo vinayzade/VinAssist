@@ -5,6 +5,7 @@ import {
   type StyleProp,
   type TextInputInstance,
   type TextInputProps,
+  type TextStyle,
   type ViewStyle,
 } from 'react-native';
 import { createStyles, useTheme } from '@/theme';
@@ -22,6 +23,10 @@ export interface AppTextInputProps extends Omit<TextInputProps, 'style'> {
   containerStyle?: StyleProp<ViewStyle>;
   /** Grows the field for long-form text (chat, notes). */
   multiline?: boolean;
+  /** Overrides for the bordered field box (e.g. a compact chat composer). */
+  fieldStyle?: StyleProp<ViewStyle>;
+  /** Overrides for the TextInput itself (e.g. `maxHeight` to cap growth). */
+  inputStyle?: StyleProp<TextStyle>;
 }
 
 const useStyles = createStyles(t => ({
@@ -62,6 +67,8 @@ export const AppTextInput = forwardRef<TextInputInstance, AppTextInputProps>(
       rightAccessory,
       containerStyle,
       multiline,
+      fieldStyle,
+      inputStyle,
       editable = true,
       onFocus,
       onBlur,
@@ -98,6 +105,7 @@ export const AppTextInput = forwardRef<TextInputInstance, AppTextInputProps>(
                 : colors.surfaceSunken,
               borderColor,
             },
+            fieldStyle,
           ]}
         >
           {leftAccessory}
@@ -107,6 +115,7 @@ export const AppTextInput = forwardRef<TextInputInstance, AppTextInputProps>(
               styles.input,
               multiline && styles.inputMultiline,
               { color: editable ? colors.text : colors.textDisabled },
+              inputStyle,
             ]}
             placeholderTextColor={colors.placeholder}
             selectionColor={colors.primary}

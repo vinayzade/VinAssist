@@ -5,6 +5,8 @@ import type {
 } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { CapturedImage, ScanTarget } from '@/features/scanner/types';
+import type { ImageQualityResult } from '@/services/imageQuality';
+import type { OCRResult } from '@/services/ocr';
 
 /* ------------------------------------------------------------------------ */
 /* Param lists                                                              */
@@ -23,7 +25,8 @@ export type AuthStackParamList = {
 /** Bottom tabs shown once the user is signed in. */
 export type MainTabParamList = {
   Home: undefined;
-  AIAssistant: undefined;
+  /** `prefill` seeds the composer, e.g. "Ask AI" from an OCR result. */
+  AIAssistant: { prefill?: string } | undefined;
   History: undefined;
   Profile: undefined;
 };
@@ -39,9 +42,15 @@ export type MainStackParamList = {
   /** Review a captured / picked image before handing it to a tool. */
   ImagePreview: { image: CapturedImage; target?: ScanTarget };
   OCR: { imageUri?: string } | undefined;
+  /** Recognised text for one image, with the actions that follow. */
+  OCRResult: { imageUri: string; result: OCRResult };
   DocumentAnalysis: { imageUri?: string } | undefined;
+  /** Ask questions about an uploaded document (RAG over its chunks). */
+  DocumentChat: { documentId: string; name: string; kind: 'pdf' | 'image'; localUri?: string };
   ImageAnalysis: { imageUri?: string } | undefined;
   ImageQuality: { imageUri?: string } | undefined;
+  /** Scores and warnings for one image. */
+  ImageQualityResult: { imageUri: string; result: ImageQualityResult };
   Sentiment: undefined;
   Voice: undefined;
   /** Development builds only: backend connectivity check. */
@@ -95,7 +104,7 @@ export type MainTabScreenProps<T extends keyof MainTabParamList> =
 /** Tool flows reachable from Home / Scanner (everything except the tab host and preview). */
 export type MainToolRoute = Exclude<
   keyof MainStackParamList,
-  'Tabs' | 'ImagePreview' | 'BackendStatus'
+  'Tabs' | 'ImagePreview' | 'OCRResult' | 'ImageQualityResult' | 'DocumentChat' | 'BackendStatus'
 >;
 
 /* ------------------------------------------------------------------------ */
