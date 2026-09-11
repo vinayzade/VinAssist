@@ -11,7 +11,10 @@ export interface DocumentSummary {
   name: string;
   mimeType: string;
   sizeBytes: number;
+  kind: 'pdf' | 'image';
   status: DocumentStatus;
+  /** Hex SHA-256 of the stored bytes, computed by the backend. */
+  sha256: string | null;
   createdAt: string;
 }
 
@@ -27,11 +30,29 @@ export interface DocumentDetail extends DocumentSummary {
   analysis?: DocumentAnalysis;
 }
 
+export interface IndexDocumentPayload {
+  id: string;
+  /** Text from on-device OCR; omit to use the PDF's own text layer. */
+  text?: string;
+  force?: boolean;
+}
+
+/** Response of `POST /documents/{id}/index`. */
+export interface IndexDocumentResult {
+  documentId: string;
+  chunkCount: number;
+  characters: number;
+  embeddingModel: string;
+  processingMs: number;
+}
+
 /* ------------------------------- Endpoints ------------------------------- */
 
 /**
- * `/api/v1/documents/*`. Uploads are multipart; the backend stores the file
- * and runs extraction asynchronously, so `status` is polled via `getDocument`.
+ * `/api/v1/documents/*`. Uploads are multipart to `/documents/upload`; the
+ * backend validates MIME, extension, real content and size, stores the bytes
+ * outside the database and returns the metadata row. Extraction runs
+ * asynchronously later, so `status` is polled via `getDocument`.
  */
 export const documentApi = baseApi.injectEndpoints({
   endpoints: build => ({
@@ -57,10 +78,11 @@ export const documentApi = baseApi.injectEndpoints({
     uploadDocument: build.mutation<DocumentSummary, UploadFile>({
       query: file => {
         const body = new FormData();
-        body.append('file', file);
-        return { url: '/documents', method: 'POST', body };
+        // React Native's FormData sends {uri, name, type} as a file part.
+        body.append('file', file as unknown as Blob);
+        return { url: '/documents/upload', method: 'POST', body };
       },
-      extraOptions: { timeout: TIMEOUTS.upload },
+      extraOptions: { timeout: TIMEOUTS.upload, maxRetries: 0 },
       invalidatesTags: [{ type: 'Document', id: 'LIST' }],
     }),
 
@@ -71,6 +93,17 @@ export const documentApi = baseApi.injectEndpoints({
       }),
       extraOptions: { timeout: TIMEOUTS.ai },
       invalidatesTags: (_result, _error, id) => [{ type: 'Document', id }],
+    }),
+
+    /** Chunks and embeds the document so it can be chatted with. */
+    indexDocument: build.mutation<IndexDocumentResult, IndexDocumentPayload>({
+      query: ({ id, ...body }) => ({
+        url: `/documents/${encodeURIComponent(id)}/index`,
+        method: 'POST',
+        body,
+      }),
+      extraOptions: { timeout: TIMEOUTS.ai, maxRetries: 0 },
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Document', id }],
     }),
 
     deleteDocument: build.mutation<void, string>({
@@ -92,5 +125,6 @@ export const {
   useLazyGetDocumentQuery,
   useUploadDocumentMutation,
   useAnalyzeDocumentMutation,
+  useIndexDocumentMutation,
   useDeleteDocumentMutation,
 } = documentApi;

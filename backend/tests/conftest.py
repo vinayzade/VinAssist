@@ -78,10 +78,21 @@ def _configure_environment(database_url: str) -> None:
     os.environ["DATABASE_URL"] = database_url
     os.environ["LOG_LEVEL"] = "WARNING"
     os.environ["CORS_ORIGINS"] = ""
+    os.environ["STORAGE_DIR"] = str(BACKEND_DIR / ".storage-test" / uuid.uuid4().hex)
+    # Small limits so oversized-upload tests stay fast.
+    os.environ["MAX_PDF_BYTES"] = str(256 * 1024)
+    os.environ["MAX_IMAGE_BYTES"] = str(128 * 1024)
+    # Never touch a real AI vendor from tests, whatever the developer's .env says.
+    os.environ["AI_PROVIDER"] = "mock"
+    os.environ["HUGGINGFACE_API_KEY"] = ""
 
+    from app.ai import set_ai_provider
     from app.core.config import get_settings
+    from app.storage import get_file_storage
 
     get_settings.cache_clear()
+    get_file_storage.cache_clear()
+    set_ai_provider(None)
 
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head"],
