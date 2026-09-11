@@ -32,6 +32,7 @@ EXPECTED_TABLES = {
     "users",
     "refresh_tokens",
     "documents",
+    "document_chunks",
     "ai_conversations",
     "ai_messages",
     "ocr_results",

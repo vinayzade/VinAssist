@@ -17,6 +17,7 @@ from app.models.enums import (
     ExposureLevel,
     SentimentLabel,
 )
+from app.models.rag import EMBEDDING_DIMENSIONS, DocumentChunk
 from app.models.results import ImageQualityResult, OcrResult, SentimentResult
 from app.models.user import RefreshToken, User
 
@@ -26,8 +27,10 @@ __all__ = [
     "AIResultMixin",
     "Base",
     "BlurLevel",
+    "EMBEDDING_DIMENSIONS",
     "ChatRole",
     "Document",
+    "DocumentChunk",
     "DocumentKind",
     "DocumentStatus",
     "ExposureLevel",

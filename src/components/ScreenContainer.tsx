@@ -1,7 +1,6 @@
 import React, { type PropsWithChildren } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -99,7 +98,9 @@ export function ScreenContainer({
       {keyboardAvoiding ? (
         <KeyboardAvoidingView
           style={base.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          // With edge-to-edge enabled (android/gradle.properties) Android
+          // ignores adjustResize, so padding is needed on both platforms.
+          behavior="padding"
         >
           {body}
         </KeyboardAvoidingView>

@@ -15,6 +15,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.ai import shutdown_ai_provider
 from app.api.router import api_router, health_router
 from app.core.config import Settings, get_settings
 from app.core.exceptions import register_exception_handlers
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         yield
     finally:
+        await shutdown_ai_provider()
         await dispose_engine()
         logger.info("Shutdown complete")
 

@@ -4,7 +4,17 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import BigInteger, CheckConstraint, DateTime, Enum, ForeignKey, Index, String, Text
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -13,6 +23,7 @@ from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
 from app.models.enums import DocumentKind, DocumentStatus
 
 if TYPE_CHECKING:
+    from app.models.rag import DocumentChunk
     from app.models.results import ImageQualityResult, OcrResult
     from app.models.user import User
 
@@ -51,10 +62,18 @@ class Document(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     error_message: Mapped[str | None] = mapped_column(Text)
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    # RAG index state (see models.rag.DocumentChunk).
+    indexed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    chunk_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    embedding_model: Mapped[str | None] = mapped_column(String(100))
+
     user: Mapped[User] = relationship(back_populates="documents")
     ocr_results: Mapped[list[OcrResult]] = relationship(back_populates="document")
     image_quality_results: Mapped[list[ImageQualityResult]] = relationship(
         back_populates="document"
+    )
+    chunks: Mapped[list[DocumentChunk]] = relationship(
+        back_populates="document", cascade="all, delete-orphan", passive_deletes=True
     )
 
     __table_args__ = (
