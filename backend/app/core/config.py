@@ -12,7 +12,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -46,6 +46,40 @@ class Settings(BaseSettings):
     db_max_overflow: int = 10
     db_echo: bool = False
 
+    # --- Auth --------------------------------------------------------------
+    # HS256 signing key for access and password-reset tokens. The default is
+    # only acceptable in development; production must set JWT_SECRET.
+    jwt_secret: str = "dev-only-insecure-secret-change-me"
+    jwt_algorithm: str = "HS256"
+    access_token_ttl_minutes: int = 15
+    refresh_token_ttl_days: int = 30
+    password_reset_ttl_minutes: int = 30
+    password_min_length: int = 8
+
+    # --- AI provider -------------------------------------------------------------
+    # Which vendor backs app/ai. "mock" needs no key and runs offline.
+    ai_provider: str = "mock"
+    ai_timeout_seconds: float = 60.0
+    huggingface_api_key: str | None = None
+    huggingface_base_url: str = "https://router.huggingface.co/hf-inference"
+    huggingface_chat_url: str = "https://router.huggingface.co/v1/chat/completions"
+    hf_chat_model: str = "meta-llama/Llama-3.1-8B-Instruct"
+    hf_sentiment_model: str = "cardiffnlp/twitter-roberta-base-sentiment-latest"
+    hf_summarization_model: str = "facebook/bart-large-cnn"
+    hf_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    hf_embedding_dimensions: int = 384
+    hf_vision_model: str = "Salesforce/blip-image-captioning-large"
+    # RAG retrieval: how many chunks reach the LLM and the similarity floor.
+    rag_top_k: int = 5
+    rag_min_similarity: float = 0.15
+
+    # --- File storage --------------------------------------------------------
+    # Uploaded files live on disk (or object storage later), never in Postgres.
+    storage_backend: Literal["local"] = "local"
+    storage_dir: Path = BACKEND_DIR / "storage"
+    max_pdf_bytes: int = 20 * 1024 * 1024
+    max_image_bytes: int = 10 * 1024 * 1024
+
     # --- CORS --------------------------------------------------------------
     # NoDecode: read as a raw comma-separated string, split in the validator.
     cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=list)
@@ -64,6 +98,12 @@ class Settings(BaseSettings):
         if not value.startswith("postgresql+asyncpg://"):
             raise ValueError("DATABASE_URL must be a postgresql+asyncpg:// URL")
         return value
+
+    @model_validator(mode="after")
+    def _no_default_secret_in_production(self) -> "Settings":
+        if self.app_env == "production" and self.jwt_secret.startswith("dev-only"):
+            raise ValueError("JWT_SECRET must be set to a strong random value in production")
+        return self
 
     @property
     def is_production(self) -> bool:
