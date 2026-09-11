@@ -10,7 +10,16 @@ import {
   ScreenContainer,
 } from '@/components';
 import { createStyles } from '@/theme';
-import { useAnalyzeSentimentMutation } from '@/services/api/aiApi';
+import {
+  useAnalyzeSentimentMutation,
+  type SentimentLabel,
+} from '@/services/api/aiApi';
+
+const LABELS: Record<SentimentLabel, { title: string; color: 'success' | 'warning' | 'error' }> = {
+  POSITIVE: { title: 'Positive', color: 'success' },
+  NEUTRAL: { title: 'Neutral', color: 'warning' },
+  NEGATIVE: { title: 'Negative', color: 'error' },
+};
 
 const useStyles = createStyles(t => ({
   form: { gap: t.spacing.md },
@@ -61,14 +70,19 @@ export function SentimentScreen() {
       ) : null}
 
       {result ? (
-        <AppCard variant="filled" style={styles.result}>
+        <AppCard variant="filled" style={styles.result} testID="sentiment-result">
           <AppText variant="overline" color="textMuted">
             Result
           </AppText>
-          <AppText variant="h3">
-            {result.label} · {Math.round(result.confidence * 100)}%
+          <AppText variant="h3" color={LABELS[result.sentiment].color} testID="sentiment-label">
+            {LABELS[result.sentiment].title} · {Math.round(result.confidence * 100)}%
           </AppText>
-          <AppText color="textSecondary">{result.explanation}</AppText>
+          {result.explanation ? (
+            <AppText color="textSecondary">{result.explanation}</AppText>
+          ) : null}
+          <AppText variant="caption" color="textMuted" testID="sentiment-meta">
+            {result.model} · {result.processingMs} ms
+          </AppText>
         </AppCard>
       ) : null}
     </ScreenContainer>
