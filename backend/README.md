@@ -1,4 +1,4 @@
-# AI SmartAssist backend
+# Vin's AI Assist backend
 
 FastAPI + PostgreSQL + SQLAlchemy 2 (async) + Alembic + Pydantic v2.
 

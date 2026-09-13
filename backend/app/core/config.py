@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     )
 
     # --- Application -----------------------------------------------------
-    app_name: str = "AI SmartAssist"
+    app_name: str = "Vin's AI Assist"
     app_version: str = "0.1.0"
     app_env: Environment = "development"
     debug: bool = False

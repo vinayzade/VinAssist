@@ -26,7 +26,7 @@ ASSISTANT_TASK = "assistant"
 NOT_FOUND = "I couldn't find that in your attached material."
 
 SYSTEM_PROMPT = (
-    "You are the assistant inside the AI SmartAssist mobile app. You help the user "
+    "You are the assistant inside the Vin's AI Assist mobile app. You help the user "
     "with THEIR OWN material only: documents they uploaded, images they attached, text "
     "recognised by OCR, and results of the app's analyses (image quality, sentiment, "
     "summaries, extracted fields).\n"

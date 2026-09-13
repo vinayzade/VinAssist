@@ -1,1 +1,1 @@
-"""AI SmartAssist backend package."""
+"""Vin's AI Assist backend package."""

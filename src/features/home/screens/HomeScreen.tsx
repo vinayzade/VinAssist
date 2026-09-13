@@ -34,7 +34,7 @@ const useStyles = createStyles(t => ({
 const keyById = (item: { id: string }) => item.id;
 
 /**
- * AI SmartAssist dashboard. One virtualised list drives the whole screen:
+ * Vin's AI Assist dashboard. One virtualised list drives the whole screen:
  * the recent-activity rows are the list data, and the greeting, quick
  * actions and tools live in the header so everything scrolls together.
  * Nested FlatLists are non-scrolling and share the outer virtualisation.

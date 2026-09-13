@@ -19,7 +19,7 @@ export function DashboardHeader({ name }: DashboardHeaderProps) {
   return (
     <View style={styles.root}>
       <AppText variant="overline" color="primary">
-        AI SmartAssist
+        Vin's AI Assist
       </AppText>
       <AppText variant="h1" testID="dashboard-greeting">
         Hello, {firstName || 'there'}

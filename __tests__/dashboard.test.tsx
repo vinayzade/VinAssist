@@ -60,7 +60,7 @@ async function backToHome() {
 /** What the history endpoint serves, newest first. */
 let activity: ActivityItem[] = [];
 
-describe('AI SmartAssist dashboard', () => {
+describe("Vin's AI Assist dashboard", () => {
   let tree: ReactTestRenderer.ReactTestRenderer;
 
   beforeAll(async () => {

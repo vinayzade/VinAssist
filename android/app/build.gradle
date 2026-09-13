@@ -136,17 +136,17 @@ android {
             // app by the defaultConfig applicationId, so the default flavor
             // must keep it. Staging keeps a suffix so it can sit alongside.
             versionNameSuffix "-dev"
-            resValue "string", "app_name", "VinAssist Dev"
+            resValue "string", "app_name", "Vin\\'s AI Assist Dev"
         }
         staging {
             dimension "environment"
             applicationIdSuffix ".staging"
             versionNameSuffix "-staging"
-            resValue "string", "app_name", "VinAssist Staging"
+            resValue "string", "app_name", "Vin\\'s AI Assist Staging"
         }
         production {
             dimension "environment"
-            resValue "string", "app_name", "VinAssist"
+            resValue "string", "app_name", "Vin\\'s AI Assist"
         }
     }
     signingConfigs {
