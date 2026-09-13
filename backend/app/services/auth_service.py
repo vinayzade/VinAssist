@@ -240,7 +240,9 @@ class AuthService:
             ) from exc
         user = await self.users.get(uuid.UUID(claims["sub"]))
         if user is None:
-            raise NotFoundError("User no longer exists.", code="USER_NOT_FOUND")
+            # A token for a deleted account is an authentication failure, not
+            # a missing resource: 401 lets the app refresh or sign out.
+            raise UnauthorizedError("Your account no longer exists.", code="USER_NOT_FOUND")
         if not user.is_active:
             raise AccountDisabledError()
         return user

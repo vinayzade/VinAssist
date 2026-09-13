@@ -312,8 +312,11 @@ async def test_delete_account_cascades_sessions(client: AsyncClient) -> None:
     deleted = await client.delete("/api/v1/users/me", headers=headers)
     assert deleted.status_code == 204
 
+    # The old access token now fails authentication (401, not a 404 lookup),
+    # so the app signs the user out instead of showing a generic error.
     gone = await client.get("/api/v1/users/me", headers=headers)
-    assert gone.status_code == 404
+    assert gone.status_code == 401
+    assert gone.json()["code"] == "USER_NOT_FOUND"
     refresh = await client.post(
         "/api/v1/auth/refresh", json={"refreshToken": registered["refreshToken"]}
     )
