@@ -1,7 +1,6 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { authReducer } from '@/features/auth/store/authSlice';
-import { historyReducer } from '@/features/history/store/historySlice';
 import { settingsReducer } from '@/features/settings/store/settingsSlice';
 import { baseApi } from '@/services/api/baseApi';
 import { listenerMiddleware } from './listenerMiddleware';
@@ -13,7 +12,6 @@ import { listenerMiddleware } from './listenerMiddleware';
 export const rootReducer = combineReducers({
   auth: authReducer,
   settings: settingsReducer,
-  history: historyReducer,
   [baseApi.reducerPath]: baseApi.reducer,
 });
 

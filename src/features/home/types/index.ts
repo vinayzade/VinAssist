@@ -1,4 +1,4 @@
-import type { HistoryKind } from '@/features/history/types';
+import type { ActivityKind } from '@/services/api';
 import type {
   MainTabParamList,
   MainToolRoute,
@@ -28,4 +28,4 @@ export interface ActivityKindMeta {
   route: DashboardRoute;
 }
 
-export type ActivityKindMap = Record<HistoryKind, ActivityKindMeta>;
+export type ActivityKindMap = Record<ActivityKind, ActivityKindMeta>;

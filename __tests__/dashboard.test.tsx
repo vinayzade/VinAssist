@@ -2,10 +2,10 @@ import React from 'react';
 import ReactTestRenderer, { act } from 'react-test-renderer';
 import App from '@/app/App';
 import { logout, sessionStarted } from '@/features/auth';
-import { addHistoryItem, clearHistory } from '@/features/history';
 import { ACTIVITY_KINDS, AI_TOOLS, QUICK_ACTIONS } from '@/features/home';
 import { formatRelativeTime } from '@/features/home/utils/formatRelativeTime';
 import { getCurrentRouteName, navigationRef } from '@/navigation';
+import { historyApi, type ActivityItem } from '@/services/api';
 import { store } from '@/store';
 
 const session = {
@@ -57,13 +57,27 @@ async function backToHome() {
   expect(getCurrentRouteName()).toBe('Home');
 }
 
+/** What the history endpoint serves, newest first. */
+let activity: ActivityItem[] = [];
+
 describe('AI SmartAssist dashboard', () => {
   let tree: ReactTestRenderer.ReactTestRenderer;
 
   beforeAll(async () => {
-    // Fetch must never be hit: the dashboard does no AI processing.
-    globalThis.fetch = jest.fn(() => {
-      throw new Error('unexpected network call');
+    // The dashboard does no AI processing; the only network call it makes
+    // is the first page of the activity history.
+    globalThis.fetch = jest.fn(async (input: RequestInfo, init?: RequestInit) => {
+      const req = input instanceof Request ? input : new Request(input, init);
+      const url = new URL(req.url);
+      if (url.pathname !== '/api/v1/history') {
+        throw new Error(`unexpected network call: ${req.url}`);
+      }
+      const pageSize = Number(url.searchParams.get('pageSize') ?? 20);
+      const items = activity.slice(0, pageSize);
+      return new Response(
+        JSON.stringify({ items, page: 1, pageSize, total: activity.length, hasMore: activity.length > pageSize }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
     }) as unknown as typeof fetch;
 
     await act(async () => {
@@ -79,7 +93,6 @@ describe('AI SmartAssist dashboard', () => {
   });
 
   afterAll(async () => {
-    store.dispatch(clearHistory());
     store.dispatch(logout());
     await flush();
     await act(async () => tree.unmount());
@@ -126,17 +139,23 @@ describe('AI SmartAssist dashboard', () => {
   );
 
   it('lists recent activity newest first, capped, and links to History', async () => {
-    await act(async () => {
-      for (let i = 1; i <= 7; i += 1) {
-        store.dispatch(
-          addHistoryItem({
-            kind: i % 2 ? 'ocr' : 'sentiment',
-            title: `Item ${i}`,
-            summary: 'summary',
-          }),
-        );
-      }
+    activity = Array.from({ length: 7 }, (_, index) => {
+      const i = 7 - index;
+      return {
+        id: `a${i}`,
+        kind: i % 2 ? 'ocr' : 'sentiment',
+        title: `Item ${i}`,
+        preview: 'summary',
+        favourite: false,
+        refId: null,
+        lastActivityAt: '2026-09-09T11:00:00Z',
+        createdAt: '2026-09-09T11:00:00Z',
+      } as ActivityItem;
     });
+    await act(async () => {
+      store.dispatch(historyApi.util.invalidateTags([{ type: 'History', id: 'LIST' }]));
+    });
+    await flush();
     await flush();
 
     expect(hostCount(tree, 'activity-')).toBe(5);

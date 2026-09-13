@@ -13,6 +13,7 @@ from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
 from app.utils.time import utcnow
 
 if TYPE_CHECKING:
+    from app.models.activity import AIActivity
     from app.models.ai import AIConversation
     from app.models.document import Document
     from app.models.results import ImageQualityResult, OcrResult, SentimentResult
@@ -42,6 +43,9 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )
     image_quality_results: Mapped[list[ImageQualityResult]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", passive_deletes=True
+    )
+    activities: Mapped[list[AIActivity]] = relationship(
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )
     sentiment_results: Mapped[list[SentimentResult]] = relationship(

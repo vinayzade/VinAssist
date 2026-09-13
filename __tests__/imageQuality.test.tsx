@@ -402,7 +402,7 @@ describe('ImageQualityResultScreen', () => {
     expect(textOf(tree, 'quality-recommendation')).toMatch(/Background lighting/);
   });
 
-  it('saves to history and the backend', async () => {
+  it('saves the report to the backend', async () => {
     responder = () =>
       new Response(
         JSON.stringify({ id: 'q1', score: 84, status: 'GOOD', blur: 'none', exposure: 'good', issues: [], engine: 'on-device', createdAt: 'now' }),
@@ -415,7 +415,6 @@ describe('ImageQualityResultScreen', () => {
     await act(async () => host(tree, 'quality-save').props.onClick());
     await flush();
 
-    expect(store.getState().history.items[0]).toMatchObject({ kind: 'imageQuality' });
     expect(calls[0].url).toBe('http://10.0.2.2:8000/api/v1/image-quality/results');
     const body = await calls[0].json();
     expect(body).toMatchObject({ status: 'GOOD', faceCount: 1, engine: 'on-device' });
@@ -423,15 +422,14 @@ describe('ImageQualityResultScreen', () => {
     expect(has(tree, 'quality-save-error')).toBe(false);
   });
 
-  it('keeps the local save when the backend fails', async () => {
+  it('explains when the backend save fails', async () => {
     const store = setupStore();
     const tree = render(<ImageQualityResultScreen navigation={navigation} route={route()} />, store);
 
     await act(async () => host(tree, 'quality-save').props.onClick());
     await flush();
 
-    expect(store.getState().history.items).toHaveLength(1);
-    expect(textOf(tree, 'quality-save-error')).toMatch(/Saved on this device/);
+    expect(textOf(tree, 'quality-save-error')).toMatch(/Could not save to your history/);
   });
 
   it('goes back for another attempt', () => {

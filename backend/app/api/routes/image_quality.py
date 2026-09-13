@@ -5,7 +5,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response, status
 
-from app.api.deps import CurrentUser, DbSession
+from app.api.deps import ActivityDep, CurrentUser, DbSession
+from app.models.activity import ActivityKind
 from app.api.routes.ocr import page_params
 from app.schemas.base import PageParams, Paginated
 from app.schemas.image_quality import ImageQualitySummary, SaveImageQualityRequest
@@ -28,9 +29,29 @@ ServiceDep = Annotated[ImageQualityService, Depends(get_service)]
     summary="Store a quality report computed on the device",
 )
 async def save_result(
-    body: SaveImageQualityRequest, user: CurrentUser, service: ServiceDep
+    body: SaveImageQualityRequest, user: CurrentUser, service: ServiceDep, activities: ActivityDep
 ) -> ImageQualitySummary:
-    return await service.save(user, body)
+    result = await service.save(user, body)
+    await activities.record(
+        user,
+        ActivityKind.IMAGE_QUALITY,
+        title=f"{body.status.capitalize()} · {body.overall_score}/100",
+        preview=body.recommendation or ", ".join(body.warnings) or "No issues found.",
+        ref_id=result.id,
+        payload={
+            "overallScore": body.overall_score,
+            "status": body.status,
+            "blurScore": body.blur_score,
+            "brightnessScore": body.brightness_score,
+            "resolutionScore": body.resolution_score,
+            "faceScore": body.face_score,
+            "faceCount": body.face_count,
+            "warnings": body.warnings,
+            "recommendation": body.recommendation,
+            "engine": body.engine,
+        },
+    )
+    return result
 
 
 @router.get("/results", response_model=Paginated[ImageQualitySummary], summary="List reports")

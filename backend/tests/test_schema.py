@@ -35,6 +35,7 @@ EXPECTED_TABLES = {
     "document_chunks",
     "ai_conversations",
     "ai_messages",
+    "ai_activities",
     "ocr_results",
     "image_quality_results",
     "sentiment_results",

@@ -66,22 +66,20 @@ export const AI_TOOLS: DashboardAction[] = [
 
 /** How each history kind is presented in Recent Activity. */
 export const ACTIVITY_KINDS: ActivityKindMap = {
-  chat: { label: 'Ask AI', glyph: '✦', route: 'AIAssistant' },
-  scan: { label: 'Scan', glyph: '▣', route: 'Scanner' },
   ocr: { label: 'Smart OCR', glyph: 'T', route: 'OCR' },
-  documentAnalysis: {
-    label: 'Document Summary',
+  document_analysis: {
+    label: 'Document analysis',
     glyph: '≡',
     route: 'DocumentAnalysis',
   },
-  imageAnalysis: {
-    label: 'Image Analysis',
+  image_analysis: {
+    label: 'Image analysis',
     glyph: '◐',
     route: 'ImageAnalysis',
   },
-  imageQuality: { label: 'Image Quality', glyph: '◈', route: 'ImageQuality' },
+  image_quality: { label: 'Image Quality', glyph: '◈', route: 'ImageQuality' },
   sentiment: { label: 'Sentiment', glyph: '~', route: 'Sentiment' },
-  voice: { label: 'Voice', glyph: '●', route: 'Voice' },
+  conversation: { label: 'Assistant chat', glyph: '✦', route: 'AIAssistant' },
 };
 
 /** How many history items the dashboard previews. */

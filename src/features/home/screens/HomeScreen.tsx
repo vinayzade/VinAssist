@@ -1,11 +1,10 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { FlatList, View, type ListRenderItem } from 'react-native';
 import { EmptyState, ScreenContainer } from '@/components';
 import { useAuth } from '@/features/auth';
-import { selectRecentHistory } from '@/features/history';
-import type { HistoryItem } from '@/features/history/types';
+import { useFocusEffect } from '@react-navigation/native';
 import type { MainTabScreenProps } from '@/navigation/navigationTypes';
-import { useAppSelector } from '@/store/hooks';
+import { useListHistoryInfiniteQuery, type ActivityItem } from '@/services/api';
 import { createStyles } from '@/theme';
 import {
   ActivityCard,
@@ -43,8 +42,28 @@ const keyById = (item: { id: string }) => item.id;
 export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
   const styles = useStyles();
   const { user } = useAuth();
-  const recent = useAppSelector(state =>
-    selectRecentHistory(state, RECENT_ACTIVITY_LIMIT),
+  // First page of the server-side activity log; History shows the rest.
+  const { currentData: history, refetch: refetchHistory } = useListHistoryInfiniteQuery({
+    pageSize: RECENT_ACTIVITY_LIMIT,
+  });
+  const recent = useMemo(
+    () => history?.pages[0]?.items.slice(0, RECENT_ACTIVITY_LIMIT) ?? [],
+    [history],
+  );
+  // The tab stays mounted: pick up new activity whenever Home is shown again.
+  const hasHistory = useRef(false);
+  hasHistory.current = Boolean(history);
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      if (hasHistory.current) {
+        refetchHistory();
+      }
+    }, [refetchHistory]),
   );
   const { openAction, openActivity, openHistory } =
     useDashboardNavigation(navigation);
@@ -59,7 +78,7 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
     [openAction],
   );
 
-  const renderActivity: ListRenderItem<HistoryItem> = useCallback(
+  const renderActivity: ListRenderItem<ActivityItem> = useCallback(
     ({ item }) => <ActivityCard item={item} onPress={openActivity} />,
     [openActivity],
   );

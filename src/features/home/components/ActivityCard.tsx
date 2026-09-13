@@ -1,15 +1,15 @@
 import React from 'react';
 import { View } from 'react-native';
 import { AppCard, AppText } from '@/components';
-import type { HistoryItem } from '@/features/history/types';
+import type { ActivityItem } from '@/services/api';
 import { createStyles } from '@/theme';
 import { ACTIVITY_KINDS } from '../constants/dashboard';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
 import { GlyphBadge } from './GlyphBadge';
 
 interface ActivityCardProps {
-  item: HistoryItem;
-  onPress: (item: HistoryItem) => void;
+  item: ActivityItem;
+  onPress: (item: ActivityItem) => void;
 }
 
 const useStyles = createStyles(t => ({
@@ -45,7 +45,7 @@ export function ActivityCard({ item, onPress }: ActivityCardProps) {
               ·
             </AppText>
             <AppText variant="caption" color="textMuted">
-              {formatRelativeTime(item.createdAt)}
+              {formatRelativeTime(item.lastActivityAt)}
             </AppText>
           </View>
         </View>

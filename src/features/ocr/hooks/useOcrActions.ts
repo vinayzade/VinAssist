@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Share } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { addHistoryItem } from '@/features/history';
 import {
   getApiErrorMessage,
   getErrorStatus,
@@ -13,7 +12,6 @@ import {
 } from '@/services/api';
 import { useSaveOcrResultMutation } from '@/services/api/ocrApi';
 import type { OCRResult } from '@/services/ocr';
-import { useAppDispatch } from '@/store/hooks';
 import { logger } from '@/utils/logger';
 import { fieldsToText } from '../components/ExtractedFields';
 
@@ -57,7 +55,6 @@ export function titleFor(text: string, max = 48): string {
  * history now, backend when signed in), summarise (backend AI).
  */
 export function useOcrActions(result: OCRResult, imageUri: string): OcrActions {
-  const dispatch = useAppDispatch();
   const [copied, setCopied] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -105,15 +102,6 @@ export function useOcrActions(result: OCRResult, imageUri: string): OcrActions {
     setSaveStatus('saving');
     setSaveError(null);
 
-    // Local history is the offline-first view and always succeeds.
-    dispatch(
-      addHistoryItem({
-        kind: 'ocr',
-        title: titleFor(result.text),
-        summary: `${result.stats.wordCount} words · ${result.engine}`,
-      }),
-    );
-
     try {
       await saveRemote({
         text: result.text,
@@ -130,11 +118,11 @@ export function useOcrActions(result: OCRResult, imageUri: string): OcrActions {
       logger.warn('[ocr] remote save failed', error);
       setSaveStatus('error');
       setSaveError(
-        'Saved on this device. Could not sync to your account: ' +
+        'Could not save to your history: ' +
           getApiErrorMessage(error as never),
       );
     }
-  }, [dispatch, imageUri, result, saveRemote, saveStatus]);
+  }, [imageUri, result, saveRemote, saveStatus]);
 
   const summarize = useCallback(
     async (mode: SummaryMode = summaryMode) => {

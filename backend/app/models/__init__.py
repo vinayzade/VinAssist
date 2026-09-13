@@ -6,6 +6,7 @@ when Alembic's `env.py` imports this package for autogeneration.
 """
 
 from app.database.base import Base
+from app.models.activity import ActivityKind, AIActivity
 from app.models.ai import AIConversation, AIMessage
 from app.models.base import AIResultMixin, TimestampMixin, UUIDPrimaryKeyMixin
 from app.models.document import Document
@@ -22,6 +23,8 @@ from app.models.results import ImageQualityResult, OcrResult, SentimentResult
 from app.models.user import RefreshToken, User
 
 __all__ = [
+    "AIActivity",
+    "ActivityKind",
     "AIConversation",
     "AIMessage",
     "AIResultMixin",

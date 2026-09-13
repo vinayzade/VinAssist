@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { HistoryItem } from '@/features/history/types';
+import type { ActivityItem } from '@/services/api';
 import type { MainTabScreenProps } from '@/navigation/navigationTypes';
 import { ACTIVITY_KINDS } from '../constants/dashboard';
 import type { DashboardAction, DashboardRoute } from '../types';
@@ -26,8 +26,15 @@ export function useDashboardNavigation(navigation: HomeNavigation) {
   );
 
   const openActivity = useCallback(
-    (item: HistoryItem) => go(ACTIVITY_KINDS[item.kind].route),
-    [go],
+    (item: ActivityItem) => {
+      if (item.kind === 'conversation' && item.refId) {
+        // Reopen the saved conversation rather than a blank assistant.
+        navigation.navigate('AIAssistant', { resume: item.refId });
+        return;
+      }
+      go(ACTIVITY_KINDS[item.kind].route);
+    },
+    [go, navigation],
   );
 
   const openHistory = useCallback(

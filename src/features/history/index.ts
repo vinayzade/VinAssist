@@ -1,9 +1,3 @@
 export { HistoryScreen } from './screens/HistoryScreen';
-export {
-  addHistoryItem,
-  clearHistory,
-  historyReducer,
-  removeHistoryItem,
-  selectRecentHistory,
-} from './store/historySlice';
+export { ACTIVITY_META, formatRelativeTime } from './activityMeta';
 export type * from './types';

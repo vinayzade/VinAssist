@@ -5,7 +5,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Response, status
 
-from app.api.deps import CurrentUser, DbSession
+from app.api.deps import ActivityDep, CurrentUser, DbSession
+from app.models.activity import ActivityKind
 from app.schemas.base import PageParams, Paginated
 from app.schemas.ocr import OcrResultDetail, OcrResultSummary, SaveOcrResultRequest
 from app.services.ocr_service import OcrService
@@ -33,9 +34,24 @@ def page_params(
     summary="Store text recognised on the device",
 )
 async def save_result(
-    body: SaveOcrResultRequest, user: CurrentUser, service: OcrServiceDep
+    body: SaveOcrResultRequest, user: CurrentUser, service: OcrServiceDep, activities: ActivityDep
 ) -> OcrResultDetail:
-    return await service.save(user, body)
+    result = await service.save(user, body)
+    first_line = next((line.strip() for line in body.text.splitlines() if line.strip()), "Scanned text")
+    await activities.record(
+        user,
+        ActivityKind.OCR,
+        title=first_line,
+        preview=body.text,
+        ref_id=result.id,
+        payload={
+            "wordCount": result.word_count,
+            "language": body.language,
+            "engine": body.engine,
+            "confidence": body.confidence,
+        },
+    )
+    return result
 
 
 @router.get("/results", response_model=Paginated[OcrResultSummary], summary="List saved results")
