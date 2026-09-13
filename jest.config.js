@@ -1,6 +1,9 @@
 module.exports = {
   preset: '@react-native/jest-preset',
-  setupFiles: ['<rootDir>/jest.setup.js'],
+  // Full-app flows (navigation + RTK Query + keychain) need more than 5 s on CI.
+  testTimeout: 20000,
+  setupFiles: ['<rootDir>/jest.renderCounter.js', '<rootDir>/jest.setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/jest.rntl.setup.js'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
