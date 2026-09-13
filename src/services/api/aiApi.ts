@@ -6,20 +6,104 @@ import type { ImageInput } from './types';
 
 export type ChatRole = 'user' | 'assistant' | 'system';
 
-export interface ChatMessage {
+/* --- Assistant (multimodal, scoped to the user's material) --- */
+
+export type AssistantAttachmentType = 'document' | 'image' | 'ocr' | 'analysis';
+export type AnalysisKind = 'image_quality' | 'sentiment' | 'extraction' | 'summary' | 'other';
+
+/**
+ * One piece of material for a turn. Documents and images are referenced by
+ * their upload id (the file itself goes through `/documents/upload`); OCR
+ * text and analysis results are sent inline.
+ */
+export type AssistantAttachment =
+  | { type: 'document'; documentId: string; title?: string }
+  | { type: 'image'; documentId: string; title?: string; /** On-device OCR of the image. */ text?: string }
+  | { type: 'ocr'; text: string; title?: string }
+  | { type: 'analysis'; kind: AnalysisKind; data: Record<string, unknown>; title?: string };
+
+/** Request of `POST /ai/chat`. */
+export interface AssistantChatRequest {
+  /** Omit to start a new conversation. */
+  conversationId?: string;
+  /** May be empty when attachments are present. Voice is transcribed on the device. */
+  message: string;
+  attachments?: AssistantAttachment[];
+  inputMode?: 'text' | 'voice';
+}
+
+/** Material the conversation currently holds (attachments from every turn). */
+export interface AssistantContextItem {
+  type: AssistantAttachmentType;
+  documentId?: string | null;
+  title: string;
+  kind?: string | null;
+  /** For documents/images: whether passages are available for retrieval. */
+  indexed?: boolean | null;
+  note?: string | null;
+}
+
+export interface AssistantSource {
+  chunkId: string;
+  documentId: string;
+  documentName?: string | null;
+  chunkIndex: number;
+  text: string;
+  startOffset: number;
+  endOffset: number;
+  /** Cosine similarity to the question, 0-1. */
+  similarity: number;
+  /** True when the answer cites this passage as [n]. */
+  cited: boolean;
+}
+
+/** `no_material`: nothing attached yet; the assistant explained itself without a model call. */
+export type AssistantScope = 'material' | 'no_material';
+
+/** Response of `POST /ai/chat`. */
+export interface AssistantChatResult {
+  conversationId: string;
+  messageId: string;
+  answer: string;
+  sources: AssistantSource[];
+  /** False when the answer could not be found in the attached material. */
+  grounded: boolean;
+  scope: AssistantScope;
+  /** Follow-up prompts the app can offer as chips. */
+  suggestions: string[];
+  context: AssistantContextItem[];
+  modelName: string;
+  provider: string;
+  retrievalMs: number;
+  generationMs: number;
+  processingMs: number;
+  createdAt: string;
+}
+
+export interface AssistantMessage {
+  id: string;
   role: ChatRole;
   content: string;
+  attachments: AssistantContextItem[];
+  sources: AssistantSource[];
+  grounded?: boolean | null;
+  createdAt: string;
 }
 
-export interface ChatRequest {
-  messages: ChatMessage[];
-  /** Optional server-side conversation id for continuity. */
-  conversationId?: string;
+export interface AssistantConversation {
+  id: string;
+  title: string | null;
+  messages: AssistantMessage[];
+  context: AssistantContextItem[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface ChatResponse {
-  message: ChatMessage;
-  conversationId?: string;
+export interface AssistantConversationSummary {
+  id: string;
+  title: string | null;
+  lastMessageAt: string | null;
+  createdAt: string;
 }
 
 export interface OcrResponse {
@@ -178,9 +262,23 @@ export interface DocumentChatResult {
  */
 export const aiApi = baseApi.injectEndpoints({
   endpoints: build => ({
-    chat: build.mutation<ChatResponse, ChatRequest>({
+    assistantChat: build.mutation<AssistantChatResult, AssistantChatRequest>({
       query: body => ({ url: '/ai/chat', method: 'POST', body }),
       extraOptions: { timeout: TIMEOUTS.ai },
+      invalidatesTags: [{ type: 'History', id: 'LIST' }],
+    }),
+
+    getConversation: build.query<AssistantConversation, string>({
+      query: id => ({ url: `/ai/conversations/${encodeURIComponent(id)}` }),
+    }),
+
+    listConversations: build.query<AssistantConversationSummary[], void>({
+      query: () => ({ url: '/ai/conversations' }),
+    }),
+
+    deleteConversation: build.mutation<void, string>({
+      query: id => ({ url: `/ai/conversations/${encodeURIComponent(id)}`, method: 'DELETE' }),
+      invalidatesTags: [{ type: 'History', id: 'LIST' }],
     }),
 
     extractText: build.mutation<OcrResponse, ImageInput>({
@@ -205,21 +303,25 @@ export const aiApi = baseApi.injectEndpoints({
     analyzeSentiment: build.mutation<SentimentResult, { text: string }>({
       query: body => ({ url: '/ai/sentiment', method: 'POST', body }),
       extraOptions: { timeout: TIMEOUTS.ai },
+      invalidatesTags: [{ type: 'History', id: 'LIST' }],
     }),
 
     summarizeText: build.mutation<SummarizeTextResult, SummarizeTextRequest>({
       query: body => ({ url: '/ai/summarize', method: 'POST', body }),
       extraOptions: { timeout: TIMEOUTS.ai },
+      invalidatesTags: [{ type: 'History', id: 'LIST' }],
     }),
 
     documentChat: build.mutation<DocumentChatResult, DocumentChatRequest>({
       query: body => ({ url: '/ai/document-chat', method: 'POST', body }),
       extraOptions: { timeout: TIMEOUTS.ai },
+      invalidatesTags: [{ type: 'History', id: 'LIST' }],
     }),
 
     extractDocument: build.mutation<ExtractDocumentResult, ExtractDocumentRequest>({
       query: body => ({ url: '/ai/extract', method: 'POST', body }),
       extraOptions: { timeout: TIMEOUTS.ai },
+      invalidatesTags: [{ type: 'History', id: 'LIST' }],
     }),
 
     analyzeDocumentImage: build.mutation<DocumentAnalysisResult, ImageInput>({
@@ -234,7 +336,11 @@ export const aiApi = baseApi.injectEndpoints({
 });
 
 export const {
-  useChatMutation,
+  useAssistantChatMutation,
+  useGetConversationQuery,
+  useLazyGetConversationQuery,
+  useListConversationsQuery,
+  useDeleteConversationMutation,
   useExtractTextMutation,
   useAnalyzeImageMutation,
   useAssessImageQualityMutation,

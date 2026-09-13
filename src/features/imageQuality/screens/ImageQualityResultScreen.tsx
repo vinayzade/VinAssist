@@ -1,11 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { Image, View } from 'react-native';
 import { AppButton, AppCard, AppHeader, AppText, ScreenContainer } from '@/components';
-import { addHistoryItem } from '@/features/history';
 import type { MainStackScreenProps } from '@/navigation/navigationTypes';
 import { getApiErrorMessage, useSaveImageQualityResultMutation } from '@/services/api';
 import type { QualityStatus } from '@/services/imageQuality';
-import { useAppDispatch } from '@/store/hooks';
 import { createStyles, useTheme } from '@/theme';
 import { logger } from '@/utils/logger';
 import { ScoreBar, toneFor } from '../components/ScoreBar';
@@ -57,7 +55,6 @@ export function ImageQualityResultScreen({
 }: MainStackScreenProps<'ImageQualityResult'>) {
   const styles = useStyles();
   const { colors } = useTheme();
-  const dispatch = useAppDispatch();
   const { imageUri, result } = route.params;
   const [saveRemote] = useSaveImageQualityResultMutation();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
@@ -99,13 +96,6 @@ export function ImageQualityResultScreen({
     }
     setSaveStatus('saving');
     setSaveError(null);
-    dispatch(
-      addHistoryItem({
-        kind: 'imageQuality',
-        title: `${STATUS_LABEL[result.status]} · ${result.overallScore}/100`,
-        summary: result.recommendation,
-      }),
-    );
     try {
       await saveRemote({
         overallScore: result.overallScore,
@@ -129,11 +119,11 @@ export function ImageQualityResultScreen({
       logger.warn('[imageQuality] remote save failed', error);
       setSaveStatus('error');
       setSaveError(
-        'Saved on this device. Could not sync to your account: ' +
+        'Could not save to your history: ' +
           getApiErrorMessage(error as never),
       );
     }
-  }, [dispatch, imageUri, metrics, result, saveRemote, saveStatus]);
+  }, [imageUri, metrics, result, saveRemote, saveStatus]);
 
   return (
     <ScreenContainer edges={['bottom']} scroll testID="image-quality-result-screen">
@@ -256,7 +246,7 @@ export function ImageQualityResultScreen({
               saveStatus === 'saved'
                 ? 'Saved'
                 : saveStatus === 'error'
-                ? 'Saved locally'
+                ? 'Try saving again'
                 : 'Save report'
             }
             style={styles.flex}
@@ -271,6 +261,36 @@ export function ImageQualityResultScreen({
             {saveError}
           </AppText>
         ) : null}
+        <AppButton
+          title="Ask the assistant about this report"
+          variant="link"
+          onPress={() =>
+            navigation.navigate('Tabs', {
+              screen: 'AIAssistant',
+              params: {
+                attach: {
+                  type: 'analysis',
+                  kind: 'image_quality',
+                  title: 'Image quality report',
+                  data: {
+                    overallScore: result.overallScore,
+                    status: result.status,
+                    blurScore: result.blurScore,
+                    brightnessScore: result.brightnessScore,
+                    resolutionScore: result.resolutionScore,
+                    faceScore: result.faceScore,
+                    faceCount: result.faceCount,
+                    width: metrics.width,
+                    height: metrics.height,
+                    warnings: result.warnings.map(w => ({ code: w.code, message: w.message })),
+                    recommendation: result.recommendation,
+                  },
+                },
+              },
+            })
+          }
+          testID="quality-ask-assistant"
+        />
         <AppText variant="caption" color="textMuted">
           Analysed in {Math.round(metrics.durationMs)} ms · {result.engine}
         </AppText>

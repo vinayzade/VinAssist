@@ -74,10 +74,12 @@ export function OcrResultScreen({
     `${Math.round(result.durationMs)} ms on device`,
   ].filter(Boolean);
 
+  // Hands the text over as an attachment (not as composer text) so the
+  // assistant treats it as material to answer about.
   const askAi = () =>
     navigation.navigate('Tabs', {
       screen: 'AIAssistant',
-      params: { prefill: result.text },
+      params: { attach: { type: 'ocr', text: result.text, title: 'Recognised text' } },
     });
 
   return (
@@ -143,7 +145,7 @@ export function OcrResultScreen({
                   actions.saveStatus === 'saved'
                     ? 'Saved'
                     : actions.saveStatus === 'error'
-                    ? 'Saved locally'
+                    ? 'Try saving again'
                     : 'Save'
                 }
                 variant="secondary"

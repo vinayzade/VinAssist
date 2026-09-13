@@ -68,7 +68,8 @@ class Settings(BaseSettings):
     hf_summarization_model: str = "facebook/bart-large-cnn"
     hf_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     hf_embedding_dimensions: int = 384
-    hf_vision_model: str = "Salesforce/blip-image-captioning-large"
+    # A vision-capable chat model (image + text via chat completions).
+    hf_vision_model: str = "google/gemma-3-12b-it"
     # RAG retrieval: how many chunks reach the LLM and the similarity floor.
     rag_top_k: int = 5
     rag_min_similarity: float = 0.15

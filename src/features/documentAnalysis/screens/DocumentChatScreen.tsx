@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import {
   AppButton,
@@ -8,10 +8,10 @@ import {
   AppTextInput,
   EmptyState,
   LoadingIndicator,
+  PassageSources,
   ScreenContainer,
 } from '@/components';
 import type { MainStackScreenProps } from '@/navigation/navigationTypes';
-import type { SourceChunk } from '@/services/api';
 import { createStyles, useTheme } from '@/theme';
 import { useDocumentChat, type ChatEntry } from '../hooks/useDocumentChat';
 
@@ -31,13 +31,6 @@ const useStyles = createStyles(t => ({
     paddingVertical: t.spacing.sm,
     gap: t.spacing.xs,
   },
-  sources: { gap: t.spacing.xs, marginTop: t.spacing.xs },
-  source: {
-    borderRadius: t.radius.md,
-    padding: t.spacing.sm,
-    gap: t.spacing.xxs,
-  },
-  sourceHead: { flexDirection: 'row', justifyContent: 'space-between' },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -59,53 +52,7 @@ const useStyles = createStyles(t => ({
   status: { paddingHorizontal: t.layout.screenPadding, paddingVertical: t.spacing.sm },
 }));
 
-function Sources({ sources, testID }: { sources: SourceChunk[]; testID: string }) {
-  const styles = useStyles();
-  const { colors } = useTheme();
-  const [open, setOpen] = useState(false);
-  const cited = sources.filter(s => s.cited);
-  const shown = open ? sources : cited.length > 0 ? cited : sources.slice(0, 1);
-
-  return (
-    <View style={styles.sources} testID={testID}>
-      <AppText variant="caption" color="textMuted">
-        Sources: {cited.length > 0 ? `${cited.length} cited` : 'none cited'} · {sources.length} retrieved
-      </AppText>
-      {shown.map(source => (
-        <View
-          key={source.chunkId}
-          style={[styles.source, { backgroundColor: source.cited ? colors.primarySoft : colors.surfaceSunken }]}
-          testID={`${testID}-chunk-${source.chunkIndex}`}
-        >
-          <View style={styles.sourceHead}>
-            <AppText variant="caption" color={source.cited ? 'primary' : 'textMuted'}>
-              [{sources.indexOf(source) + 1}] Passage {source.chunkIndex + 1}
-              {source.cited ? ' · cited' : ''}
-            </AppText>
-            <AppText variant="caption" color="textMuted">
-              {Math.round(source.similarity * 100)}% match
-            </AppText>
-          </View>
-          <AppText variant="caption" color="textSecondary" numberOfLines={open ? undefined : 3}>
-            {source.text}
-          </AppText>
-        </View>
-      ))}
-      {sources.length > shown.length || open ? (
-        <AppButton
-          title={open ? 'Show fewer' : `Show all ${sources.length} passages`}
-          variant="link"
-          size="sm"
-          fullWidth={false}
-          onPress={() => setOpen(v => !v)}
-          testID={`${testID}-toggle`}
-        />
-      ) : null}
-    </View>
-  );
-}
-
-function Entry({ entry }: { entry: ChatEntry }) {
+const Entry = memo(function EntryBase({ entry }: { entry: ChatEntry }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const isUser = entry.role === 'user';
@@ -138,7 +85,7 @@ function Entry({ entry }: { entry: ChatEntry }) {
           </AppText>
         ) : null}
         {entry.sources && entry.sources.length > 0 ? (
-          <Sources sources={entry.sources} testID={`${entry.id}-sources`} />
+          <PassageSources sources={entry.sources} testID={`${entry.id}-sources`} />
         ) : null}
         {entry.meta ? (
           <AppText variant="caption" color="textMuted">
@@ -148,7 +95,7 @@ function Entry({ entry }: { entry: ChatEntry }) {
       </View>
     </View>
   );
-}
+});
 
 /** Ask questions about one uploaded document; answers cite retrieved passages. */
 export function DocumentChatScreen({ route }: MainStackScreenProps<'DocumentChat'>) {
@@ -156,6 +103,7 @@ export function DocumentChatScreen({ route }: MainStackScreenProps<'DocumentChat
   const { documentId, name, kind, localUri } = route.params;
   const chat = useDocumentChat({ documentId, kind, localUri });
   const [draft, setDraft] = useState('');
+  const renderEntry = useCallback(({ item }: { item: ChatEntry }) => <Entry entry={item} />, []);
 
   const send = () => {
     if (!draft.trim()) {
@@ -194,7 +142,7 @@ export function DocumentChatScreen({ route }: MainStackScreenProps<'DocumentChat
       <FlatList
         data={chat.entries}
         keyExtractor={item => item.id}
-        renderItem={({ item }) => <Entry entry={item} />}
+        renderItem={renderEntry}
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={

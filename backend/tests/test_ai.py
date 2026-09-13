@@ -237,13 +237,15 @@ async def test_hf_summarization_embeddings_and_vision_parse_pipeline_output() ->
     def handler(request: httpx.Request) -> httpx.Response:
         path = request.url.path
         if path.endswith("/chat/completions"):
+            body = json.loads(request.content)
+            content = body["messages"][-1]["content"]
+            if isinstance(content, list):  # vision: text + image data URL
+                assert content[1]["image_url"]["url"].startswith("data:image/png;base64,")
+                return httpx.Response(200, json={"choices": [{"message": {"content": "a cat on a sofa"}}]})
             return httpx.Response(200, json={"choices": [{"message": {"content": "First point. Second point."}}]})
         if "MiniLM" in path:
             assert path.endswith("/pipeline/feature-extraction"), path
             return httpx.Response(200, json=[[0.1, 0.2, 0.3], [0.3, 0.2, 0.1]])
-        if "blip" in path:
-            assert request.headers["Content-Type"] == "image/png"
-            return httpx.Response(200, json=[{"generated_text": "a cat on a sofa"}])
         return httpx.Response(404)
 
     provider = _hf(handler)

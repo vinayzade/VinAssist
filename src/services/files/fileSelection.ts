@@ -3,7 +3,8 @@ import {
   isErrorWithCode,
   pick,
 } from '@react-native-documents/picker';
-import { launchImageLibrary } from 'react-native-image-picker';
+import { PermissionsAndroid, Platform } from 'react-native';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { mimeTypesFor } from './fileConstraints';
 import { validateFile, type ValidateFileOptions } from './fileValidation';
 import type {
@@ -156,8 +157,77 @@ export async function selectImageFromGallery(
   );
 }
 
+/**
+ * Opens the system camera and resolves with the captured photo as a
+ * validated image file, `null` if the user backs out, or throws
+ * `FileSelectionError`. Requests the CAMERA runtime permission on Android
+ * (the picker does not do it for apps that declare the permission).
+ */
+export async function captureImageWithCamera(
+  options: ValidateFileOptions = {},
+): Promise<SelectedFile | null> {
+  if (Platform.OS === 'android') {
+    const status = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.CAMERA,
+      {
+        title: 'Camera access',
+        message: 'Take a photo to ask the assistant about it.',
+        buttonPositive: 'Allow',
+        buttonNegative: 'Not now',
+      },
+    );
+    if (status !== PermissionsAndroid.RESULTS.GRANTED) {
+      throw new FileSelectionError(
+        'Camera access is turned off. Enable it in Settings.',
+        'permission',
+      );
+    }
+  }
+
+  const result = await launchCamera({
+    mediaType: 'photo',
+    cameraType: 'back',
+    quality: 0.9,
+    includeBase64: false,
+    saveToPhotos: false,
+  });
+
+  if (result.didCancel) {
+    return null;
+  }
+  if (result.errorCode) {
+    throw new FileSelectionError(
+      result.errorCode === 'permission'
+        ? 'Camera access is turned off. Enable it in Settings.'
+        : result.errorCode === 'camera_unavailable'
+        ? 'No camera is available on this device.'
+        : result.errorMessage ?? 'Could not open the camera.',
+      result.errorCode === 'permission' ? 'permission' : 'unavailable',
+    );
+  }
+
+  const asset = result.assets?.[0];
+  if (!asset?.uri) {
+    return null;
+  }
+
+  return accept(
+    {
+      uri: asset.uri,
+      name: asset.fileName ?? `photo-${Date.now()}.jpg`,
+      size: asset.fileSize,
+      mimeType: asset.type ?? 'image/jpeg',
+      width: asset.width,
+      height: asset.height,
+      source: 'camera',
+    },
+    { ...options, kinds: ['image'] },
+  );
+}
+
 export const fileSelection = {
   selectDocument,
   selectImageFromGallery,
+  captureImageWithCamera,
   validateFile,
 };

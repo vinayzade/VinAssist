@@ -10,3 +10,6 @@ export * from './EmptyState';
 export * from './StatePlaceholder';
 export * from './SelectedFileCard';
 export * from './DocumentSourcePicker';
+export * from './PassageSources';
+export * from './ActionSheet';
+export * from './PromptDialog';

@@ -88,10 +88,33 @@ class VectorStore:
         min_similarity: float = 0.0,
     ) -> list[RetrievedChunk]:
         """Top-k chunks of one document by cosine similarity to the query."""
+        return await self.search_documents(
+            user_id=user_id,
+            document_ids=(document_id,),
+            query_embedding=query_embedding,
+            top_k=top_k,
+            min_similarity=min_similarity,
+        )
+
+    async def search_documents(
+        self,
+        *,
+        user_id: uuid.UUID,
+        document_ids: Sequence[uuid.UUID],
+        query_embedding: Sequence[float],
+        top_k: int = 5,
+        min_similarity: float = 0.0,
+    ) -> list[RetrievedChunk]:
+        """Top-k chunks across several of the user's documents, most similar first."""
+        if not document_ids:
+            return []
         distance = DocumentChunk.embedding.cosine_distance(list(query_embedding))
         stmt = (
             select(DocumentChunk, distance.label("distance"))
-            .where(DocumentChunk.user_id == user_id, DocumentChunk.document_id == document_id)
+            .where(
+                DocumentChunk.user_id == user_id,
+                DocumentChunk.document_id.in_(list(document_ids)),
+            )
             .order_by(distance)
             .limit(top_k)
         )

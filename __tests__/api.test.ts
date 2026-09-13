@@ -151,7 +151,7 @@ describe('automatic token refresh', () => {
     );
 
     const result = await store.dispatch(
-      historyApi.endpoints.listHistory.initiate(),
+      historyApi.endpoints.listHistory.initiate({}),
     );
 
     expect(calls.map(c => new URL(c.url).pathname)).toEqual([
@@ -165,7 +165,7 @@ describe('automatic token refresh', () => {
     // Retry used the new token.
     expect(calls[2].headers.get('Authorization')).toBe('Bearer access-2');
 
-    expect('data' in result && result.data).toMatchObject({ total: 0 });
+    expect('data' in result && result.data).toMatchObject({ pages: [{ total: 0 }] });
     expect(sessionService.getAccessToken()).toBe('access-2');
     expect(await secureStorage.getAccessToken()).toBe('access-2');
     expect(await secureStorage.getRefreshToken()).toBe('refresh-2');
@@ -193,7 +193,7 @@ describe('automatic token refresh', () => {
     };
 
     const a = store.dispatch(userApi.endpoints.getMe.initiate());
-    const b = store.dispatch(historyApi.endpoints.listHistory.initiate());
+    const b = store.dispatch(historyApi.endpoints.listHistory.initiate({}));
     await flush();
     expect(isRefreshInFlight()).toBe(true);
     release();
@@ -317,7 +317,7 @@ describe('error normalisation', () => {
       throw new TypeError('Network request failed');
     });
     const r = await store.dispatch(
-      aiApi.endpoints.chat.initiate({ messages: [] }),
+      aiApi.endpoints.assistantChat.initiate({ message: 'hi' }),
     );
     expect('error' in r && r.error).toMatchObject({ status: 'NETWORK' });
     expect('error' in r && getApiErrorMessage(r.error)).toMatch(/connection/);
@@ -361,10 +361,10 @@ describe('retry policy', () => {
         json({ items: [], page: 1, pageSize: 20, total: 0, hasMore: false }),
     );
 
-    const r = await store.dispatch(historyApi.endpoints.listHistory.initiate());
+    const r = await store.dispatch(historyApi.endpoints.listHistory.initiate({}));
 
     expect(calls).toHaveLength(3);
-    expect('data' in r && r.data).toMatchObject({ total: 0 });
+    expect('data' in r && r.data).toMatchObject({ pages: [{ total: 0 }] });
     await settle();
   }, 10_000);
 
@@ -373,7 +373,7 @@ describe('retry policy', () => {
     respondWith(() => json({ detail: 'down' }, 503));
 
     const r = await store.dispatch(
-      aiApi.endpoints.chat.initiate({ messages: [] }),
+      aiApi.endpoints.assistantChat.initiate({ message: 'hi' }),
     );
 
     expect(calls).toHaveLength(1);

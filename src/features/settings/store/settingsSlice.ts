@@ -11,6 +11,7 @@ export const initialSettingsState: SettingsState = {
   themeMode: 'system',
   language: 'en',
   hapticsEnabled: true,
+  voiceRepliesEnabled: true,
   hydrated: false,
 };
 
@@ -36,6 +37,9 @@ const settingsSlice = createSlice({
     setHapticsEnabled(state, { payload }: PayloadAction<boolean>) {
       state.hapticsEnabled = payload;
     },
+    setVoiceRepliesEnabled(state, { payload }: PayloadAction<boolean>) {
+      state.voiceRepliesEnabled = payload;
+    },
     resetSettings() {
       return { ...initialSettingsState, hydrated: true };
     },
@@ -55,15 +59,22 @@ const settingsSlice = createSlice({
     selectThemeMode: state => state.themeMode,
     selectLanguage: state => state.language,
     selectHapticsEnabled: state => state.hapticsEnabled,
+    selectVoiceRepliesEnabled: state => state.voiceRepliesEnabled,
   },
 });
 
-export const { setThemeMode, setLanguage, setHapticsEnabled, resetSettings } =
-  settingsSlice.actions;
+export const {
+  setThemeMode,
+  setLanguage,
+  setHapticsEnabled,
+  setVoiceRepliesEnabled,
+  resetSettings,
+} = settingsSlice.actions;
 export const {
   selectSettings,
   selectThemeMode,
   selectLanguage,
   selectHapticsEnabled,
+  selectVoiceRepliesEnabled,
 } = settingsSlice.selectors;
 export const settingsReducer = settingsSlice.reducer;

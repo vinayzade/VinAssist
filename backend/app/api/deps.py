@@ -32,6 +32,8 @@ from app.models.user import User
 from app.services.auth_service import AuthService, ClientInfo
 from app.services.document_service import DocumentService
 from app.services.health import HealthService
+from app.services.activity_service import ActivityService
+from app.services.assistant_service import AssistantService
 from app.services.rag_service import RAGService
 from app.storage import FileStorage, get_file_storage
 
@@ -93,6 +95,13 @@ async def get_optional_user(
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
 OptionalUser = Annotated[User | None, Depends(get_optional_user)]
+
+
+def get_activity_service(db: DbSession) -> ActivityService:
+    return ActivityService(db)
+
+
+ActivityDep = Annotated[ActivityService, Depends(get_activity_service)]
 
 
 # --- AI services -------------------------------------------------------------------
@@ -172,3 +181,29 @@ def get_rag_service(
 
 
 RAGDep = Annotated[RAGService, Depends(get_rag_service)]
+
+
+def get_assistant_service(
+    db: DbSession,
+    documents: DocumentServiceDep,
+    rag: RAGDep,
+    chat: ChatServiceDep,
+    embeddings: EmbeddingServiceDep,
+    provider: AIProviderDep,
+    settings: AppSettings,
+) -> AssistantService:
+    # Vision is optional: providers without it still answer from OCR text.
+    return AssistantService(
+        db,
+        documents,
+        rag,
+        chat,
+        embeddings,
+        provider.vision,
+        timeout_seconds=settings.ai_timeout_seconds,
+        top_k=settings.rag_top_k,
+        min_similarity=settings.rag_min_similarity,
+    )
+
+
+AssistantDep = Annotated[AssistantService, Depends(get_assistant_service)]

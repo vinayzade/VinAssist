@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from app.schemas.base import CamelModel
 
@@ -172,3 +172,120 @@ class IndexDocumentOut(CamelModel):
     characters: int
     embedding_model: str
     processing_ms: int
+
+
+# --- Assistant (multimodal, app-scoped chat) --------------------------------------------
+
+ASSISTANT_MESSAGE_MAX = 4_000
+ASSISTANT_OCR_TEXT_MAX = 20_000
+
+AttachmentTypeIn = Literal["document", "image", "ocr", "analysis"]
+AnalysisKindIn = Literal["image_quality", "sentiment", "extraction", "summary", "other"]
+
+
+class AssistantAttachmentIn(CamelModel):
+    """
+    One piece of the user's material for this turn.
+
+    - `document`: an uploaded PDF/image, by id (retrieved with RAG).
+    - `image`: an uploaded image, by id; `text` may carry on-device OCR of it.
+    - `ocr`: text recognised on the device, sent inline.
+    - `analysis`: a result the app produced (image quality, sentiment, ...).
+    """
+
+    type: AttachmentTypeIn
+    document_id: uuid.UUID | None = None
+    text: str | None = Field(default=None, max_length=ASSISTANT_OCR_TEXT_MAX)
+    title: str | None = Field(default=None, max_length=120)
+    kind: AnalysisKindIn | None = None
+    data: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def _check_shape(self) -> AssistantAttachmentIn:
+        if self.type in ("document", "image") and self.document_id is None:
+            raise ValueError(f"{self.type} attachments need a documentId")
+        if self.type == "ocr" and not (self.text or "").strip():
+            raise ValueError("ocr attachments need text")
+        if self.type == "analysis" and (self.kind is None or not isinstance(self.data, dict)):
+            raise ValueError("analysis attachments need kind and data")
+        return self
+
+
+class AssistantChatRequestIn(CamelModel):
+    conversation_id: uuid.UUID | None = None
+    """May be blank when attachments are present; the assistant then describes them."""
+    message: str = Field(default="", max_length=ASSISTANT_MESSAGE_MAX)
+    attachments: list[AssistantAttachmentIn] = Field(default_factory=list, max_length=5)
+    input_mode: Literal["text", "voice"] = "text"
+
+    @model_validator(mode="after")
+    def _something_to_say(self) -> AssistantChatRequestIn:
+        self.message = self.message.strip()
+        if not self.message and not self.attachments:
+            raise ValueError("Type a message or attach something")
+        return self
+
+
+class AssistantContextItemOut(CamelModel):
+    """Material the conversation currently holds (attachments from all turns)."""
+
+    type: AttachmentTypeIn
+    document_id: uuid.UUID | None = None
+    title: str
+    kind: str | None = None
+    """For documents/images: whether passages are available for retrieval."""
+    indexed: bool | None = None
+    note: str | None = None
+
+
+class AssistantSourceOut(SourceChunkOut):
+    document_id: uuid.UUID
+    document_name: str | None = None
+
+
+AssistantScopeOut = Literal["material", "no_material"]
+
+
+class AssistantChatOut(CamelModel):
+    conversation_id: uuid.UUID
+    message_id: uuid.UUID
+    answer: str
+    sources: list[AssistantSourceOut]
+    """False when the assistant could not answer from the material."""
+    grounded: bool
+    """`no_material` means nothing is attached yet and the model was not called."""
+    scope: AssistantScopeOut
+    suggestions: list[str]
+    context: list[AssistantContextItemOut]
+    model_name: str
+    provider: str
+    retrieval_ms: int
+    generation_ms: int
+    processing_ms: int
+    created_at: datetime
+
+
+class AssistantMessageOut(CamelModel):
+    id: uuid.UUID
+    role: Literal["user", "assistant", "system"]
+    content: str
+    attachments: list[AssistantContextItemOut] = Field(default_factory=list)
+    sources: list[AssistantSourceOut] = Field(default_factory=list)
+    grounded: bool | None = None
+    created_at: datetime
+
+
+class AssistantConversationOut(CamelModel):
+    id: uuid.UUID
+    title: str | None
+    messages: list[AssistantMessageOut]
+    context: list[AssistantContextItemOut]
+    created_at: datetime
+    updated_at: datetime
+
+
+class AssistantConversationSummaryOut(CamelModel):
+    id: uuid.UUID
+    title: str | None
+    last_message_at: datetime | None
+    created_at: datetime

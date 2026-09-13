@@ -6,6 +6,7 @@ import {
   setHapticsEnabled,
   setLanguage,
   setThemeMode,
+  setVoiceRepliesEnabled,
 } from '../store/settingsSlice';
 import type { Language, ThemeMode } from '../types';
 
@@ -25,6 +26,10 @@ export function useSettings() {
     ),
     setHapticsEnabled: useCallback(
       (enabled: boolean) => dispatch(setHapticsEnabled(enabled)),
+      [dispatch],
+    ),
+    setVoiceRepliesEnabled: useCallback(
+      (enabled: boolean) => dispatch(setVoiceRepliesEnabled(enabled)),
       [dispatch],
     ),
     resetSettings: useCallback(() => dispatch(resetSettings()), [dispatch]),

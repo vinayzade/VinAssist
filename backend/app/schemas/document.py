@@ -25,6 +25,8 @@ class DocumentAnalysis(CamelModel):
     summary: str
     key_points: list[str]
     document_type: str | None = None
+    """Vision caption of an image, produced when it is attached to the assistant."""
+    caption: str | None = None
 
 
 class DocumentDetail(DocumentSummary):
@@ -43,6 +45,7 @@ class DocumentDetail(DocumentSummary):
                 summary=row.analysis.get("summary", ""),
                 key_points=list(row.analysis.get("keyPoints", [])),
                 document_type=row.analysis.get("documentType"),
+                caption=row.analysis.get("caption"),
             )
         return cls(
             id=row.id,

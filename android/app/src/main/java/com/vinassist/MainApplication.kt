@@ -8,6 +8,8 @@ import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.vinassist.imagequality.ImageQualityPackage
 import com.vinassist.ocr.TextRecognitionPackage
+import com.vinassist.speech.SpeechRecognitionPackage
+import com.vinassist.speech.TextToSpeechPackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -19,6 +21,8 @@ class MainApplication : Application(), ReactApplication {
           // App-local TurboModules (not autolinked because they live in this app).
           add(TextRecognitionPackage())
           add(ImageQualityPackage())
+          add(SpeechRecognitionPackage())
+          add(TextToSpeechPackage())
         },
     )
   }

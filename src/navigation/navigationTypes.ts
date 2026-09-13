@@ -4,6 +4,7 @@ import type {
   NavigatorScreenParams,
 } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { AssistantHandoff } from '@/features/aiAssistant/types';
 import type { CapturedImage, ScanTarget } from '@/features/scanner/types';
 import type { ImageQualityResult } from '@/services/imageQuality';
 import type { OCRResult } from '@/services/ocr';
@@ -25,8 +26,13 @@ export type AuthStackParamList = {
 /** Bottom tabs shown once the user is signed in. */
 export type MainTabParamList = {
   Home: undefined;
-  /** `prefill` seeds the composer, e.g. "Ask AI" from an OCR result. */
-  AIAssistant: { prefill?: string } | undefined;
+  /**
+   * `attach` queues material from another screen (OCR text, an analysis
+   * result) as an attachment; `prefill` seeds the composer text.
+   */
+  AIAssistant:
+    | { prefill?: string; attach?: AssistantHandoff; /** Reopen a saved conversation. */ resume?: string }
+    | undefined;
   History: undefined;
   Profile: undefined;
 };

@@ -152,7 +152,11 @@ export function MainNavigator() {
         options={{ title: 'Quality report' }}
       />
       <Stack.Screen name="Sentiment" component={SentimentScreen} />
-      <Stack.Screen name="Voice" component={VoiceScreen} />
+      <Stack.Screen
+        name="Voice"
+        component={VoiceScreen}
+        options={{ title: 'Voice assistant' }}
+      />
       {isDevelopment ? (
         <Stack.Screen
           name="BackendStatus"

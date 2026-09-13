@@ -9,6 +9,7 @@ import {
   ErrorView,
   ScreenContainer,
 } from '@/components';
+import type { MainStackScreenProps } from '@/navigation/navigationTypes';
 import { createStyles } from '@/theme';
 import {
   useAnalyzeSentimentMutation,
@@ -26,7 +27,7 @@ const useStyles = createStyles(t => ({
   result: { marginTop: t.spacing.lg, gap: t.spacing.xs },
 }));
 
-export function SentimentScreen() {
+export function SentimentScreen({ navigation }: MainStackScreenProps<'Sentiment'>) {
   const styles = useStyles();
   const [text, setText] = useState('');
   const [analyzeSentiment, { data: result, error, isLoading: loading }] =
@@ -83,6 +84,29 @@ export function SentimentScreen() {
           <AppText variant="caption" color="textMuted" testID="sentiment-meta">
             {result.model} · {result.processingMs} ms
           </AppText>
+          <AppButton
+            title="Ask the assistant about this"
+            variant="link"
+            onPress={() =>
+              navigation.navigate('Tabs', {
+                screen: 'AIAssistant',
+                params: {
+                  attach: {
+                    type: 'analysis',
+                    kind: 'sentiment',
+                    title: 'Sentiment result',
+                    data: {
+                      sentiment: result.sentiment,
+                      confidence: result.confidence,
+                      explanation: result.explanation ?? undefined,
+                      text: text.trim(),
+                    },
+                  },
+                },
+              })
+            }
+            testID="sentiment-ask-assistant"
+          />
         </AppCard>
       ) : null}
     </ScreenContainer>

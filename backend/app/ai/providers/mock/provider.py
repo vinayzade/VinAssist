@@ -48,8 +48,12 @@ class MockChatService(ChatService):
         if last_user is None or not last_user.content.strip():
             raise AIInvalidInputError("The conversation has no user message.")
         prompt_tokens = sum(len(_words(m.content)) for m in request.messages)
-        if request.metadata.get("task") == "rag":
-            reply = _rag_answer(last_user.content, request.metadata.get("context", "[]"))
+        if request.metadata.get("task") in ("rag", "assistant"):
+            reply = _rag_answer(
+                last_user.content,
+                request.metadata.get("context", "[]"),
+                not_found=request.metadata.get("not_found", "I couldn't find that in the document."),
+            )
         else:
             reply = f"[mock] You said: {last_user.content.strip()[:200]}"
         return ChatResponse(
@@ -72,7 +76,7 @@ _STOPWORDS = {
 }
 
 
-def _rag_answer(user_content: str, context_json: str) -> str:
+def _rag_answer(user_content: str, context_json: str, *, not_found: str) -> str:
     """
     Extractive stand-in for an LLM: returns the passage sentence sharing the
     most keywords with the question, cited as [n]; the canonical not-found
@@ -94,7 +98,7 @@ def _rag_answer(user_content: str, context_json: str) -> str:
             if score and (best is None or score > best[0]):
                 best = (score, sentence.strip(), index + 1)
     if best is None:
-        return "I couldn't find that in the document."
+        return not_found
     return f"{best[1]} [{best[2]}]"
 
 

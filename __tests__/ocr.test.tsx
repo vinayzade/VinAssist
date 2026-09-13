@@ -348,11 +348,11 @@ describe('OcrResultScreen', () => {
 
     expect((navigation as { navigate: jest.Mock }).navigate).toHaveBeenCalledWith('Tabs', {
       screen: 'AIAssistant',
-      params: { prefill: 'Invoice 2026\nTotal 10' },
+      params: { attach: { type: 'ocr', text: 'Invoice 2026\nTotal 10', title: 'Recognised text' } },
     });
   });
 
-  it('saves to local history and syncs to the backend', async () => {
+  it('saves the result to the backend', async () => {
     responder = () =>
       new Response(
         JSON.stringify({ id: 'r1', preview: 'Invoice 2026', wordCount: 4, confidence: 0.8, language: null, engine: 'mlkit-latin', createdAt: 'now', text: 'x' }),
@@ -365,22 +365,19 @@ describe('OcrResultScreen', () => {
     await act(async () => host(tree, 'ocr-save').props.onClick());
     await flush();
 
-    const item = store.getState().history.items[0];
-    expect(item).toMatchObject({ kind: 'ocr', title: 'Invoice 2026' });
     expect(calls[0].url).toBe('http://10.0.2.2:8000/api/v1/ocr/results');
     expect(await calls[0].json()).toMatchObject({ text: 'Invoice 2026\nTotal 10', engine: 'mlkit-latin' });
     expect(has(tree, 'ocr-save-error')).toBe(false);
   });
 
-  it('keeps the local save when the backend sync fails', async () => {
+  it('explains when the backend save fails', async () => {
     const store = setupStore();
     const tree = render(<OcrResultScreen navigation={navigation} route={route()} />, store);
 
     await act(async () => host(tree, 'ocr-save').props.onClick());
     await flush();
 
-    expect(store.getState().history.items).toHaveLength(1);
-    expect(textOf(tree, 'ocr-save-error')).toMatch(/Saved on this device/);
+    expect(textOf(tree, 'ocr-save-error')).toMatch(/Could not save to your history/);
   });
 
   it('shows a clear message when summarisation is not available yet', async () => {

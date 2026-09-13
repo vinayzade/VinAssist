@@ -151,11 +151,12 @@ jest.mock('react-native-nitro-modules', () => ({ callback: fn => fn }));
 
 // react-native-image-picker: resolve with whatever the test queued.
 jest.mock('react-native-image-picker', () => {
-  const state = { next: { didCancel: true } };
+  const state = { next: { didCancel: true }, nextCamera: { didCancel: true } };
   return {
     __esModule: true,
     __mock: state,
     launchImageLibrary: jest.fn(async () => state.next),
+    launchCamera: jest.fn(async () => state.nextCamera),
   };
 });
 

@@ -7,6 +7,7 @@ slightly different shapes across models.
 
 from __future__ import annotations
 
+import base64
 import logging
 import re
 from collections.abc import AsyncIterator
@@ -48,7 +49,7 @@ class HuggingFaceModels:
     sentiment: str = "cardiffnlp/twitter-roberta-base-sentiment-latest"
     summarization: str = "facebook/bart-large-cnn"
     embeddings: str = "sentence-transformers/all-MiniLM-L6-v2"
-    vision: str = "Salesforce/blip-image-captioning-large"
+    vision: str = "google/gemma-3-12b-it"
     embedding_dimensions: int = 384
 
 
@@ -320,6 +321,18 @@ def _as_vectors(body: Any, *, expected: int) -> tuple[tuple[float, ...], ...]:
 
 
 class HFVisionService(VisionService):
+    """
+    Image understanding through a vision-capable chat model on the
+    OpenAI-compatible endpoint (the router no longer serves the classic
+    image-to-text pipelines). The image travels as a data URL; the prompt
+    defaults to a short caption request.
+    """
+
+    DEFAULT_PROMPT = (
+        "Describe this image in one or two plain sentences: what it shows, and if it is a "
+        "document, what kind (invoice, receipt, business card, form, letter...)."
+    )
+
     def __init__(self, client: HuggingFaceClient, model: str) -> None:
         self.client = client
         self.model = model
@@ -327,14 +340,40 @@ class HFVisionService(VisionService):
     async def describe(self, request: VisionRequest) -> VisionResponse:
         if not request.image.data:
             raise AIInvalidInputError("The image is empty.")
-        body = await self.client.pipeline_binary(
-            self.model, request.image.data, request.image.mime_type
+        data_url = (
+            f"data:{request.image.mime_type};base64,"
+            f"{base64.b64encode(request.image.data).decode('ascii')}"
+        )
+        body = await self.client.chat_completions(
+            {
+                "model": self.model,
+                "max_tokens": request.max_tokens,
+                "temperature": 0.2,
+                "stream": False,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": request.prompt or self.DEFAULT_PROMPT},
+                            {"type": "image_url", "image_url": {"url": data_url}},
+                        ],
+                    }
+                ],
+            }
         )
         try:
-            description = body[0]["generated_text"].strip()
+            description = body["choices"][0]["message"]["content"].strip()
         except (KeyError, IndexError, TypeError) as exc:
             raise AIError("Unexpected vision response from the provider.") from exc
-        return VisionResponse(description=description, model=_info(self.model))
+        usage = body.get("usage") or {}
+        return VisionResponse(
+            description=description,
+            model=_info(body.get("model") or self.model),
+            usage=Usage(
+                prompt_tokens=int(usage.get("prompt_tokens") or 0),
+                completion_tokens=int(usage.get("completion_tokens") or 0),
+            ),
+        )
 
 
 # --- Provider ------------------------------------------------------------------------------------

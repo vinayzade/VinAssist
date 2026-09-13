@@ -10,6 +10,9 @@ interfaces here, never on a provider.
     summarization/     SummarizationService
     embeddings/        EmbeddingService   (+ `dimensions`)
     ocr/               OCRService         (server-side; the app does OCR on-device)
+    extraction/        ExtractionService  (classify + structured fields, validated)
+    rag/               chunking, pgvector store, grounded prompt for document chat
+    assistant/         prompt + material "cards" for the in-app assistant (/ai/chat)
     providers/
       mock/            deterministic, offline, no keys (default)
       huggingface/     Inference API via httpx; models configurable in .env

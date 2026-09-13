@@ -53,7 +53,10 @@ function render() {
     tree = ReactTestRenderer.create(
       <Provider store={store}>
         <ThemeProvider theme={lightTheme}>
-          <SentimentScreen />
+          <SentimentScreen
+            navigation={{ navigate: jest.fn(), goBack: jest.fn() } as never}
+            route={{ key: 'k', name: 'Sentiment' } as never}
+          />
         </ThemeProvider>
       </Provider>,
     );
